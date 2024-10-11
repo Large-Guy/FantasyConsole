@@ -2,7 +2,8 @@
 
 VM* vmCreate() {
     VM *vm = malloc(sizeof(VM));
-    vm->memory = malloc(4096);
+    vm->memory = malloc(16000); //16KB
+    vm->memoryMap = malloc(16000);
     vm->codeLength = 0;
     vm->code = NULL;
     vm->ip = 0;
@@ -12,6 +13,7 @@ VM* vmCreate() {
     vm->cmpFlags = 0;
     vm->interrupt = false;
     vm->sysCallCount = 0;
+    vm->debugger = NULL;
     return vm;
 }
 
@@ -34,6 +36,8 @@ int vmRun(VM* vm) {
 
     vm->interrupt = false;
     while(!vm->interrupt && vm->ip < vm->codeLength) {
+        if(vm->debugger != NULL)
+            vm->debugger(vm);
         OpCode op = vm->code[vm->ip];
         switch (op) {
             case NOP: {
@@ -256,6 +260,25 @@ int vmRun(VM* vm) {
                 vm->cp--;
                 break;
             }
+            case ALC: {
+                vm->ip++;
+                short size = readShort(vm);
+                short ptr = vmAlloc(vm, size);
+                if(ptr == -1) {
+                    ERROR("Out of memory");
+                }
+                vm->registers[0] = (short)ptr;
+                vm->ip++;
+                break;
+            }
+            case FRE: {
+                vm->ip++;
+                short ptr = readShort(vm);
+                short size = readShort(vm);
+                vmFree(vm, ptr, size);
+                vm->ip++;
+                break;
+            }
             //Extended opcodes
             case SPX: {
                 vm->ip++;
@@ -277,6 +300,7 @@ int vmRun(VM* vm) {
                 vm->ip++;
                 break;
             }
+
             default: {
                 vm->interrupt = true;
                 vm->error = "Unknown opcode";
@@ -306,5 +330,38 @@ short readShort(VM* vm) {
         }
         default:
             return low;
+    }
+}
+
+short vmAlloc(VM* vm, int size) {
+    short ptr = -1;
+    for (int i = 0; i < 16000; i++) {
+        if(!vm->memoryMap[i]) {
+            bool usable = true;
+            for (int j = 0; j < size; j++) {
+                if(vm->memoryMap[i + j]) {
+                    usable = false;
+                    break;
+                }
+            }
+            if(usable) {
+                ptr = (short)i;
+                for (int j = 0; j < size; j++) {
+                    vm->memoryMap[i + j] = true;
+                }
+                break;
+            }
+        }
+    }
+    if(ptr == -1) {
+        return -1;
+    }
+    return ptr;
+}
+
+void vmFree(VM* vm, short ptr, int size) {
+    int offset = ptr;
+    for (int i = 0; i < size; i++) {
+        vm->memoryMap[offset + i] = false;
     }
 }

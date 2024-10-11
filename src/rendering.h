@@ -2,7 +2,7 @@
 #define FAKEOS_RENDERING_H
 #include <stdlib.h>
 #include <stdio.h>
-#include <malloc.h>
+#include <string.h>
 
 typedef struct {
     unsigned char *buffer;
