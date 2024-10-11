@@ -73,29 +73,33 @@ int sysCallFlushScreen(VM* vm) {
 
 unsigned char program[] = {
         //Initalization stuff
-        ALC, REG, 0,IMM, SHORT(14), //Allocate 14 bytes of memory "Hello, World!\n"
-        STB, REG, 0, IMM, SHORT(0), IMM, SHORT('H'), //Store 'H' at 0
-        STB, REG, 0, IMM, SHORT(1), IMM, SHORT('e'), //Store 'e' at 1
-        STB, REG, 0, IMM, SHORT(2), IMM, SHORT('l'), //Store 'l' at 2
-        STB, REG, 0, IMM, SHORT(3), IMM, SHORT('l'), //Store 'l' at 3
-        STB, REG, 0, IMM, SHORT(4), IMM, SHORT('o'), //Store 'o' at 4
-        STB, REG, 0, IMM, SHORT(5), IMM, SHORT(','), //Store ',' at 5
-        STB, REG, 0, IMM, SHORT(6), IMM, SHORT(' '), //Store ' ' at 6
-        STB, REG, 0, IMM, SHORT(7), IMM, SHORT('W'), //Store 'W' at 7
-        STB, REG, 0, IMM, SHORT(8), IMM, SHORT('o'), //Store 'o' at 8
-        STB, REG, 0, IMM, SHORT(9), IMM, SHORT('r'), //Store 'r' at 9
-        STB, REG, 0, IMM, SHORT(10), IMM, SHORT('l'), //Store 'l' at 10
-        STB, REG, 0, IMM, SHORT(11), IMM, SHORT('d'), //Store 'd' at 11
-        STB, REG, 0, IMM, SHORT(12), IMM, SHORT('!'), //Store '!' at 12
-        STB, REG, 0, IMM, SHORT(13), IMM, SHORT('\n'), //Store '\n' at 13
+        ALC, REG, 0, IMS, SHORT(14), //Allocate 14 bytes of memory "Hello, World!\n"
+        STB, REG, 0, IMS, SHORT(0), IMB, 'H', //Store 'H' at 0
+        STB, REG, 0, IMS, SHORT(1), IMB, 'e', //Store 'e' at 1
+        STB, REG, 0, IMS, SHORT(2), IMB, 'l', //Store 'l' at 2
+        STB, REG, 0, IMS, SHORT(3), IMB, 'l', //Store 'l' at 3
+        STB, REG, 0, IMS, SHORT(4), IMB, 'o', //Store 'o' at 4
+        STB, REG, 0, IMS, SHORT(5), IMB, ',', //Store ',' at 5
+        STB, REG, 0, IMS, SHORT(6), IMB, ' ', //Store ' ' at 6
+        STB, REG, 0, IMS, SHORT(7), IMB, 'W', //Store 'W' at 7
+        STB, REG, 0, IMS, SHORT(8), IMB, 'o', //Store 'o' at 8
+        STB, REG, 0, IMS, SHORT(9), IMB, 'r', //Store 'r' at 9
+        STB, REG, 0, IMS, SHORT(10), IMB, 'l', //Store 'l' at 10
+        STB, REG, 0, IMS, SHORT(11), IMB, 'd', //Store 'd' at 11
+        STB, REG, 0, IMS, SHORT(12), IMB, '!', //Store '!' at 12
+        STB, REG, 0, IMS, SHORT(13), IMB, '\n', //Store '\n' at 13
 
         //Print "Hello, World!\n"
         //"Hello, World!\n" is stored at register 0 already
         MOV, REG, 1, REG, 0, //Move the address of "Hello, World!\n" to register 1
-        MOV, REG, 2, IMM, SHORT(14), //Move the address of "Hello, World!\n" to register 1
+        MOV, REG, 2, IMS, SHORT(14), //Move the address of "Hello, World!\n" to register 1
 
-        //Call the print syscall
-        SYS, IMM, SHORT(1),
+        SYS, IMS, SHORT(1), //Call the print syscall
+
+        FRE, REG, 0, //Free the memory allocated for "Hello, World!\n"
+
+        MOV, REG, 0, IMS, SHORT(0), //Move 0 to register 0
+        SYS, IMS, SHORT(0), //Call the exit syscall
 };
 
 const char* names[] = {

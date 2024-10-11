@@ -4,6 +4,13 @@ VM* vmCreate() {
     VM *vm = malloc(sizeof(VM));
     vm->memory = malloc(16000); //16KB
     vm->memoryMap = malloc(16000);
+    vm->memorySizes = malloc(16000);
+    //Initialize memory
+    for (int i = 0; i < 16000; i++) {
+        vm->memory[i] = 0;
+        vm->memoryMap[i] = false;
+        vm->memorySizes[i] = 0;
+    }
     vm->codeLength = 0;
     vm->code = NULL;
     vm->ip = 0;
@@ -281,9 +288,7 @@ int vmRun(VM* vm) {
                 vm->ip++;
                 short ptr = readShort(vm);
                 vm->ip++;
-                short size = readShort(vm);
-                vmFree(vm, ptr, size);
-                vm->ip++;
+                vmFree(vm, ptr);
                 break;
             }
             case STB: {
@@ -297,6 +302,23 @@ int vmRun(VM* vm) {
                     ERROR("Memory not allocated");
                 }
                 vm->memory[ptr + offset] = (unsigned char)value;
+                vm->ip++;
+                break;
+            }
+            case LDB: {
+                vm->ip++;
+                short ptr = readShort(vm);
+                vm->ip++;
+                short offset = readShort(vm);
+                vm->ip++;
+                if(vm->code[vm->ip] != REG)
+                    ERROR("Expected register");
+                vm->ip++;
+                unsigned char reg = vm->code[vm->ip];
+                if(vm->memoryMap[ptr + offset] == false) {
+                    ERROR("Memory not allocated");
+                }
+                vm->registers[reg] = vm->memory[ptr + offset];
                 vm->ip++;
                 break;
             }
@@ -329,19 +351,34 @@ int vmRun(VM* vm) {
             }
         }
     }
+    //Make sure that all memory is freed before exiting
+    for (int i = 0; i < 16000; i++) {
+        if(vm->memoryMap[i]) {
+            printf("Memory leak at %d\n    size %d\n", i, vm->memorySizes[i]);
+            while(vm->memoryMap[i]) {
+                i++;
+            }
+        }
+    }
     return vm->registers[0];
 }
 
 short readShort(VM* vm) {
     unsigned char low = vm->code[vm->ip];
     switch(low) {
-        case IMM:
+        case IMS:
         {
             vm->ip++;
             unsigned char a = vm->code[vm->ip];
             vm->ip++;
             unsigned char b = vm->code[vm->ip];
             return (b << 8) | a;
+        }
+        case IMB:
+        {
+            vm->ip++;
+            unsigned char a = vm->code[vm->ip];
+            return a;
         }
         case REG:
         {
@@ -370,6 +407,7 @@ short vmAlloc(VM* vm, int size) {
                 for (int j = 0; j < size; j++) {
                     vm->memoryMap[i + j] = true;
                 }
+                vm->memorySizes[i] = size;
                 break;
             }
         }
@@ -380,8 +418,12 @@ short vmAlloc(VM* vm, int size) {
     return ptr;
 }
 
-void vmFree(VM* vm, short ptr, int size) {
+void vmFree(VM* vm, short ptr) {
     int offset = ptr;
+    int size = vm->memorySizes[offset];
+    if(size == 0) {
+        return;
+    }
     for (int i = 0; i < size; i++) {
         vm->memoryMap[offset + i] = false;
     }

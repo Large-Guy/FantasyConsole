@@ -25,10 +25,12 @@ typedef enum {
     CMP,
     RET,
     REG,
-    IMM,
+    IMS,
+    IMB,
     ALC,
     FRE,
     STB,
+    LDB,
 
     //Extended opcodes
     //Video memory
@@ -45,6 +47,7 @@ typedef enum {
 struct VM{
     unsigned char* memory;
     bool* memoryMap;
+    unsigned short* memorySizes;
     unsigned short registers[16];
 
     //Rendering
@@ -81,6 +84,6 @@ void vmSysCall(VM* vm, int (*func)(VM* vm));
 int vmRun(VM* vm);
 short readShort(VM* vm);
 short vmAlloc(VM* vm, int size);
-void vmFree(VM* vm, short ptr, int size);
+void vmFree(VM* vm, short ptr);
 
 #endif //FAKEOS_ASM_H
