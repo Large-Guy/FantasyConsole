@@ -28,6 +28,7 @@ typedef enum {
     IMM,
     ALC,
     FRE,
+    STB,
 
     //Extended opcodes
     //Video memory

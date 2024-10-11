@@ -29,10 +29,12 @@ int sysCallExit(VM* vm) {
 }
 
 int sysCallPrint(VM* vm) {
-    for (int i = 0; i < 16; i+=4) {
-        printf("R%d: %d\tR%d: %d\tR%d: %d\tR%d: %d\n", i, vm->registers[i], i+1, vm->registers[i+1], i+2, vm->registers[i+2], i+3, vm->registers[i+3]);
+    short address = vm->registers[1]; //Address of the string
+    short length = vm->registers[2]; //Length of the string
+    while (vm->memory[address] != 0) {
+        printf("%c", vm->memory[address]);
+        address++;
     }
-    printf("\n");
     return 0;
 }
 
@@ -71,38 +73,29 @@ int sysCallFlushScreen(VM* vm) {
 
 unsigned char program[] = {
         //Initalization stuff
-        MOV, REG, 4, IMM, SHORT(0), //Set register 4 to 0 frame counter
+        ALC, REG, 0,IMM, SHORT(14), //Allocate 14 bytes of memory "Hello, World!\n"
+        STB, REG, 0, IMM, SHORT(0), IMM, SHORT('H'), //Store 'H' at 0
+        STB, REG, 0, IMM, SHORT(1), IMM, SHORT('e'), //Store 'e' at 1
+        STB, REG, 0, IMM, SHORT(2), IMM, SHORT('l'), //Store 'l' at 2
+        STB, REG, 0, IMM, SHORT(3), IMM, SHORT('l'), //Store 'l' at 3
+        STB, REG, 0, IMM, SHORT(4), IMM, SHORT('o'), //Store 'o' at 4
+        STB, REG, 0, IMM, SHORT(5), IMM, SHORT(','), //Store ',' at 5
+        STB, REG, 0, IMM, SHORT(6), IMM, SHORT(' '), //Store ' ' at 6
+        STB, REG, 0, IMM, SHORT(7), IMM, SHORT('W'), //Store 'W' at 7
+        STB, REG, 0, IMM, SHORT(8), IMM, SHORT('o'), //Store 'o' at 8
+        STB, REG, 0, IMM, SHORT(9), IMM, SHORT('r'), //Store 'r' at 9
+        STB, REG, 0, IMM, SHORT(10), IMM, SHORT('l'), //Store 'l' at 10
+        STB, REG, 0, IMM, SHORT(11), IMM, SHORT('d'), //Store 'd' at 11
+        STB, REG, 0, IMM, SHORT(12), IMM, SHORT('!'), //Store '!' at 12
+        STB, REG, 0, IMM, SHORT(13), IMM, SHORT('\n'), //Store '\n' at 13
 
-        MOV, REG, 1, IMM, SHORT(0), //Set register 0 to 0 Y
-        MOV, REG, 2, IMM, SHORT(0), //Set register 1 to 0 X
-        MOV, REG, 3, REG, 4, //Set register 2 to 0 Color
+        //Print "Hello, World!\n"
+        //"Hello, World!\n" is stored at register 0 already
+        MOV, REG, 1, REG, 0, //Move the address of "Hello, World!\n" to register 1
+        MOV, REG, 2, IMM, SHORT(14), //Move the address of "Hello, World!\n" to register 1
 
-        CMP , REG, 2, IMM, SHORT(WIDTH), //Compare X to WIDTH
-        JGT, IMM, SHORT(104), //If X > WIDTH jump
-        JEQ, IMM, SHORT(104), //If X == WIDTH jump
-
-        MOV, REG, 1, IMM, SHORT(0), //Set Y to 0
-
-        CMP, REG, 1, IMM, SHORT(HEIGHT), //Compare Y to HEIGHT
-        JGT, IMM, SHORT(84), //If Y > HEIGHT jump
-        JEQ, IMM, SHORT(84), //If Y == HEIGHT jump
-
-        SPX, REG, 2, REG, 1, REG, 3, //Set pixel at X, Y to color
-
-        ADD, REG, 3, REG, 3, IMM, SHORT(1), //Increment color
-
-        ADD, REG, 1, REG, 1,IMM, SHORT(1), //Increment Y
-        JMP, IMM, SHORT(43), //Jump to the y loop
-
-        ADD, REG, 3, REG, 3, IMM, SHORT(1), //Increment color
-
-        ADD, REG, 2, REG, 2, IMM, SHORT(1), //Increment X
-        JMP, IMM, SHORT(23), //Jump to the x loop
-
-        ADD, REG, 4, REG, 4, IMM, SHORT(1), //Increment frame counter
-
-        SYS, IMM, SHORT(2), //Flush the screen
-        JMP, IMM, SHORT(6), //Jump to the beginning
+        //Call the print syscall
+        SYS, IMM, SHORT(1),
 };
 
 const char* names[] = {

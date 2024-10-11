@@ -262,20 +262,41 @@ int vmRun(VM* vm) {
             }
             case ALC: {
                 vm->ip++;
+                if(vm->code[vm->ip] != REG)
+                    ERROR("Expected Register value");
+                vm->ip++;
+                int reg = vm->code[vm->ip];
+                vm->ip++;
+
                 short size = readShort(vm);
                 short ptr = vmAlloc(vm, size);
                 if(ptr == -1) {
                     ERROR("Out of memory");
                 }
-                vm->registers[0] = (short)ptr;
+                vm->registers[reg] = (short)ptr;
                 vm->ip++;
                 break;
             }
             case FRE: {
                 vm->ip++;
                 short ptr = readShort(vm);
+                vm->ip++;
                 short size = readShort(vm);
                 vmFree(vm, ptr, size);
+                vm->ip++;
+                break;
+            }
+            case STB: {
+                vm->ip++;
+                short ptr = readShort(vm);
+                vm->ip++;
+                short offset = readShort(vm);
+                vm->ip++;
+                short value = readShort(vm);
+                if(vm->memoryMap[ptr + offset] == false) {
+                    ERROR("Memory not allocated");
+                }
+                vm->memory[ptr + offset] = (unsigned char)value;
                 vm->ip++;
                 break;
             }
