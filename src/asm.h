@@ -3,46 +3,8 @@
 #include <stdlib.h>
 #include <stdbool.h>
 #include "rendering.h"
-
-typedef enum {
-    NOP,
-    SYS,
-    MOV,
-    ADD,
-    SUB,
-    MUL,
-    DIV,
-    JMP,
-    JEQ,
-    JNE,
-    JLT,
-    JGT,
-    BRN,
-    BEQ,
-    BNE,
-    BLT,
-    BGT,
-    CMP,
-    RET,
-    REG,
-    IMS,
-    IMB,
-    ALC,
-    FRE,
-    STB,
-    LDB,
-
-    //Extended opcodes
-    //Video memory
-    SPX, //Write pixel to the screen buffer
-    CLS, //Clear the screen buffer
-} OpCode;
-
-typedef enum {
-    CMP_EQUAL = 1,
-    CMP_LESS = 2,
-    CMP_GREATER = 4,
-} CMPFlags;
+#include "ops.h"
+#include "chunk.h"
 
 struct VM{
     unsigned char* memory;
@@ -79,7 +41,7 @@ struct VM{
 typedef struct VM VM;
 
 VM* vmCreate();
-VM* vmLoadProgram(VM* vm, unsigned char* program, int length);
+VM* vmLoadProgram(VM* vm, Chunk* chunk);
 void vmSysCall(VM* vm, int (*func)(VM* vm));
 int vmRun(VM* vm);
 short readShort(VM* vm);

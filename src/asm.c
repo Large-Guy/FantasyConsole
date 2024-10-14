@@ -11,6 +11,9 @@ VM* vmCreate() {
         vm->memoryMap[i] = false;
         vm->memorySizes[i] = 0;
     }
+    for (int i = 0; i < 16; ++i) {
+        vm->registers[i] = 0;
+    }
     vm->codeLength = 0;
     vm->code = NULL;
     vm->ip = 0;
@@ -24,11 +27,11 @@ VM* vmCreate() {
     return vm;
 }
 
-VM* vmLoadProgram(VM* vm, unsigned char* program, int length) {
-    vm->code = malloc(length);
-    vm->codeLength = length;
-    for (int i = 0; i < length; i++) {
-        vm->code[i] = program[i];
+VM* vmLoadProgram(VM* vm, Chunk* chunk) {
+    vm->code = malloc(chunk->size);
+    vm->codeLength = chunk->size;
+    for (int i = 0; i < chunk->size; i++) {
+        vm->code[i] = chunk->data[i];
     }
     return vm;
 }

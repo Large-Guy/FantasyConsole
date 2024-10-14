@@ -15,6 +15,12 @@ add_executable(FakeOS src/main.c
         src/rendering.c
         src/rendering.h
         src/asm.c
-        src/asm.h)
+        src/asm.h
+        src/parser.c
+        src/parser.h
+        src/ops.h
+        src/chunk.c
+        src/chunk.h
+)
 
 target_link_libraries(FakeOS ${SDL2_LIBRARIES})

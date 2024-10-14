@@ -3,6 +3,7 @@
 #include <stdbool.h>
 #include "rendering.h"
 #include "asm.h"
+#include "parser.h"
 
 const int WIDTH = 400;
 const int HEIGHT = 300;
@@ -38,6 +39,13 @@ int sysCallPrint(VM* vm) {
     return 0;
 }
 
+int sysCallDebugRegisters(VM* vm) {
+    for (int i = 0; i < 16; i+=4) {
+        printf("R%d: %d\tR%d: %d\tR%d: %d\tR%d: %d\n", i, vm->registers[i], i+1, vm->registers[i+1], i+2, vm->registers[i+2], i+3, vm->registers[i+3]);
+    }
+    return 0;
+}
+
 int sysCallFlushScreen(VM* vm) {
     SDL_Event e;
     while (SDL_PollEvent(&e)) {
@@ -69,38 +77,7 @@ int sysCallFlushScreen(VM* vm) {
     return 0;
 }
 
-#define SHORT(x) (x & 0xFF), ((x >> 8) & 0xFF)
-
-unsigned char program[] = {
-        //Initalization stuff
-        ALC, REG, 0, IMS, SHORT(14), //Allocate 14 bytes of memory "Hello, World!\n"
-        STB, REG, 0, IMS, SHORT(0), IMB, 'H', //Store 'H' at 0
-        STB, REG, 0, IMS, SHORT(1), IMB, 'e', //Store 'e' at 1
-        STB, REG, 0, IMS, SHORT(2), IMB, 'l', //Store 'l' at 2
-        STB, REG, 0, IMS, SHORT(3), IMB, 'l', //Store 'l' at 3
-        STB, REG, 0, IMS, SHORT(4), IMB, 'o', //Store 'o' at 4
-        STB, REG, 0, IMS, SHORT(5), IMB, ',', //Store ',' at 5
-        STB, REG, 0, IMS, SHORT(6), IMB, ' ', //Store ' ' at 6
-        STB, REG, 0, IMS, SHORT(7), IMB, 'W', //Store 'W' at 7
-        STB, REG, 0, IMS, SHORT(8), IMB, 'o', //Store 'o' at 8
-        STB, REG, 0, IMS, SHORT(9), IMB, 'r', //Store 'r' at 9
-        STB, REG, 0, IMS, SHORT(10), IMB, 'l', //Store 'l' at 10
-        STB, REG, 0, IMS, SHORT(11), IMB, 'd', //Store 'd' at 11
-        STB, REG, 0, IMS, SHORT(12), IMB, '!', //Store '!' at 12
-        STB, REG, 0, IMS, SHORT(13), IMB, '\n', //Store '\n' at 13
-
-        //Print "Hello, World!\n"
-        //"Hello, World!\n" is stored at register 0 already
-        MOV, REG, 1, REG, 0, //Move the address of "Hello, World!\n" to register 1
-        MOV, REG, 2, IMS, SHORT(14), //Move the address of "Hello, World!\n" to register 1
-
-        SYS, IMS, SHORT(1), //Call the print syscall
-
-        FRE, REG, 0, //Free the memory allocated for "Hello, World!\n"
-
-        MOV, REG, 0, IMS, SHORT(0), //Move 0 to register 0
-        SYS, IMS, SHORT(0), //Call the exit syscall
-};
+//region Debugger
 
 const char* names[] = {
         "SYS",
@@ -149,6 +126,8 @@ void manageDebugger(VM* vm) {
 
 }
 
+//endregion
+
 int main(void) {
     //region SDL setup
     if (SDL_Init(SDL_INIT_VIDEO) != 0) {
@@ -181,11 +160,14 @@ int main(void) {
     lastTime = SDL_GetTicks();
 
 //region VM setup
-    VM* vm = vmCreate();
+    Chunk* program = parseFile("programs/test.asm");
 
-    for (int i = 0; i < 16; ++i) {
-        vm->registers[i] = 0;
-    }
+    //Debug the program to a file
+    FILE* file = fopen("programs/test.bin", "wb");
+    fwrite(program->data, 1, program->size, file);
+    fclose(file);
+
+    VM* vm = vmCreate();
 
     //vm->debugger = manageDebugger;
 
@@ -195,10 +177,11 @@ int main(void) {
     vmSysCall(vm, sysCallExit);
     vmSysCall(vm, sysCallPrint);
     vmSysCall(vm, sysCallFlushScreen);
+    vmSysCall(vm, sysCallDebugRegisters);
 
     sysCallFlushScreen(vm);
 
-    vmLoadProgram(vm, program, sizeof(program));
+    vmLoadProgram(vm, program);
 
 
     int result = vmRun(vm);
